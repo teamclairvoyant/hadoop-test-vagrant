@@ -36,7 +36,6 @@ Vagrant.configure(2) do |config|
     bash /home/vagrant/hadoop-deployment-bash/disable_selinux.sh
     bash /home/vagrant/hadoop-deployment-bash/disable_thp.sh
     bash /home/vagrant/hadoop-deployment-bash/install_ntp.sh
-    bash /home/vagrant/hadoop-deployment-bash/services/configure_ntp.sh
     bash /home/vagrant/hadoop-deployment-bash/install_nscd.sh
     bash /home/vagrant/hadoop-deployment-bash/install_jdk.sh --jdktype openjdk --jdkversion 8
     bash /home/vagrant/hadoop-deployment-bash/configure_javahome.sh

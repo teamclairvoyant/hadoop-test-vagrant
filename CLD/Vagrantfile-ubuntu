@@ -1,0 +1,66 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "bento/ubuntu-16.04"
+  config.vm.hostname = "cloudera.localdomain"
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = "2048"
+  end
+  config.vm.network "forwarded_port", guest: 7180, host: 7180
+
+  config.vm.synced_folder "../../hadoop-deployment-bash", "/home/vagrant/hadoop-deployment-bash"
+
+  config.vm.provision "shell", inline: <<-SHELL
+    # CM 6 needs updates to hadoop-deployment-bash that are not yet in master.
+    # Use config.vm.synced_folder.
+    CMVER=6.1.1
+
+#    # Comment out config.vm.synced_folder to use this section.
+#    CMVER=5.16.1
+#    apt-get -y -q install git
+#    # Comment out this line to use config.vm.synced_folder above.
+#    git clone --depth 1 https://github.com/teamclairvoyant/hadoop-deployment-bash /home/vagrant/hadoop-deployment-bash
+
+    # Fix /etc/hosts so CM Host Inspector does not complain.
+    #IP=$(ip -4 a | awk '/inet/{print $2}' | grep -Ev '127.0.0.1|169.254.' | sed -e 's|/[0-9].*||')
+    #H1=$(hostname -f)
+    #H2=$(hostname -s)
+    #sed -e "/^$IP/d" -e "/^127.0.0.1[[:space:]]*${H1}/d" -i /etc/hosts
+    #echo "$IP	$H1 $H2" >>/etc/hosts
+
+    echo "========================================"
+    echo "========================================"
+    echo "Installing CM version $CMVER"
+    echo "========================================"
+    echo "========================================"
+    bash /home/vagrant/hadoop-deployment-bash/evaluate.sh >/home/vagrant/evaluate.0.pre.out 2>/home/vagrant/evaluate.0.pre.err
+    bash /home/vagrant/hadoop-deployment-bash/install_tools.sh
+    bash /home/vagrant/hadoop-deployment-bash/change_swappiness.sh
+    bash /home/vagrant/hadoop-deployment-bash/disable_iptables.sh
+    bash /home/vagrant/hadoop-deployment-bash/disable_ipv6.sh
+    bash /home/vagrant/hadoop-deployment-bash/disable_selinux.sh
+    bash /home/vagrant/hadoop-deployment-bash/disable_thp.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_ntp.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_nscd.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_jdk.sh --jdktype openjdk --jdkversion 8
+    bash /home/vagrant/hadoop-deployment-bash/configure_javahome.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_jce.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_krb5.sh
+    bash /home/vagrant/hadoop-deployment-bash/configure_tuned.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_entropy.sh
+    bash /home/vagrant/hadoop-deployment-bash/install_clouderamanageragent.sh localhost $CMVER
+    bash /home/vagrant/hadoop-deployment-bash/install_clouderamanagerserver.sh embedded $CMVER | tee -a /home/vagrant/output.txt
+    while ! (exec 6<>/dev/tcp/$(hostname)/7180) ; do echo 'Waiting for cloudera-scm-server to start...'; sleep 10; done
+    bash /home/vagrant/hadoop-deployment-bash/api/install_dump_cm_config.sh | tee -a /home/vagrant/output.txt
+    bash /home/vagrant/hadoop-deployment-bash/evaluate.sh >/home/vagrant/evaluate.1.post.out 2>/home/vagrant/evaluate.1.post.err
+  SHELL
+
+  # http://fgrehm.viewdocs.io/vagrant-cachier/
+  if Vagrant.has_plugin?("vagrant-cachier")
+    config.cache.enable :apt
+    config.cache.synced_folder_opts = {
+      owner: "_apt",
+    }
+  end
+end

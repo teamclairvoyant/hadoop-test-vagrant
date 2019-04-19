@@ -14,7 +14,7 @@ Vagrant.configure(2) do |config|
   config.vm.provision "shell", inline: <<-SHELL
     # CM 6 needs updates to hadoop-deployment-bash that are not yet in master.
     # Use config.vm.synced_folder.
-    CMVER=6.1.1
+    CMVER=6.2.0
 
 #    # Comment out config.vm.synced_folder to use this section.
 #    CMVER=5.16.1

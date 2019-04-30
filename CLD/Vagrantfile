@@ -9,18 +9,14 @@ Vagrant.configure(2) do |config|
   end
   config.vm.network "forwarded_port", guest: 7180, host: 7180
 
-  config.vm.synced_folder "../../hadoop-deployment-bash", "/home/vagrant/hadoop-deployment-bash"
+  #config.vm.synced_folder "../../hadoop-deployment-bash", "/home/vagrant/hadoop-deployment-bash"
 
   config.vm.provision "shell", inline: <<-SHELL
-    # CM 6 needs updates to hadoop-deployment-bash that are not yet in master.
-    # Use config.vm.synced_folder.
+    # Comment out config.vm.synced_folder to use this section.
     CMVER=6.2.0
-
-#    # Comment out config.vm.synced_folder to use this section.
-#    CMVER=5.16.1
-#    yum -y -e1 -d1 install deltarpm git
-#    # Comment out this line to use config.vm.synced_folder above.
-#    git clone --depth 1 https://github.com/teamclairvoyant/hadoop-deployment-bash /home/vagrant/hadoop-deployment-bash
+    yum -y -e1 -d1 install deltarpm git
+    # Comment out this line to use config.vm.synced_folder above.
+    git clone --depth 1 https://github.com/teamclairvoyant/hadoop-deployment-bash /home/vagrant/hadoop-deployment-bash
 
     # Fix /etc/hosts so CM Host Inspector does not complain.
     #IP=$(ip -4 a | awk '/inet/{print $2}' | grep -Ev '127.0.0.1|169.254.' | sed -e 's|/[0-9].*||')
